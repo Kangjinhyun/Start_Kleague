@@ -7,12 +7,12 @@ const {
   getTeamByTriCode,
   getPlayersByTeamInSeason,
   formatPlayerCode,
-  getMatchesByRound,
-  getMatchesByTeamInSeason,
-  getMatchesBySeason,
+  getScheduleBySeason,
+  getScheduleByRound,
+  getScheduleByTeamInSeason,
+  getMatchStatsById,
   getRoundLabel
 } = require("./services/kleagueService");
-
 
 // 1) 2025년 K리그1 팀 목록 출력
 const teams2025K1 = getTeamsBySeason(2025, "K1");
@@ -22,11 +22,11 @@ console.log("📋 2025년 K리그1 팀 목록:");
 teams2025K1.forEach((team, index) => {
   console.log(
     `${index + 1}. [${team.triCode}] ${team.name} | 연고지: ${team.city} | ` +
-    `홈구장: ${team.stadium} | 창단: ${team.foundedYear}년 | 수용인원: ${team.stadiumCapacity} (id: ${team.id})`
+      `홈구장: ${team.stadium} | 창단: ${team.foundedYear}년 | 수용인원: ${team.stadiumCapacity} (id: ${team.id})`
   );
 });
 
-// 2) triCode 조회 테스트
+// 2) triCode로 팀 조회 테스트
 console.log("\n🔍 triCode로 팀 조회 테스트");
 console.log("SEO →", getTeamByTriCode("SEO"));
 console.log("uls →", getTeamByTriCode("uls"));
@@ -52,22 +52,28 @@ ulsanPlayers2025.forEach((player, index) => {
     } | 생년월일: ${player.birthDate}`
   );
 });
+
 // 4) 2025년 K리그1 1라운드 일정 출력
-const round1Matches = getMatchesByRound(2025, "K1", 1);
+const round1Matches = getScheduleByRound(2025, "K1", 1);
 
 console.log("\n📅 2025년 K리그1 1라운드 일정:");
 round1Matches.forEach((match) => {
   const home = teams[match.homeTeamId];
   const away = teams[match.awayTeamId];
-  const roundLabel = getRoundLabel(match); // 🔹 스플릿 여부 반영
+  const roundLabel = getRoundLabel(match);
+
+  const stats = getMatchStatsById(match.matchId);
+  const scoreText = stats
+    ? ` | 스코어: ${stats.homeScore} - ${stats.awayScore}`
+    : "";
 
   console.log(
-    `${roundLabel} | ${match.date} ${match.time} | ${home.name} vs ${away.name} (${match.stadium})`
+    `${roundLabel} | ${match.date} ${match.time} | ${home.name} vs ${away.name} (${match.stadium})${scoreText}`
   );
 });
 
-// 5) 2025년 K리그1 FC서울 전체 일정
-const seoulSchedule2025 = getMatchesByTeamInSeason(
+// 5) 2025년 K리그1 FC서울 시즌 일정
+const seoulSchedule2025 = getScheduleByTeamInSeason(
   2025,
   "K1",
   TEAM_IDS.SEOUL
@@ -77,17 +83,20 @@ console.log("\n🗓 2025년 K리그1 FC서울 시즌 일정:");
 seoulSchedule2025.forEach((match) => {
   const home = teams[match.homeTeamId];
   const away = teams[match.awayTeamId];
-  const roundLabel = getRoundLabel(match); // 🔹 여기서도 사용
+  const roundLabel = getRoundLabel(match);
+
+  const stats = getMatchStatsById(match.matchId);
+  const scoreText = stats
+    ? ` | 스코어: ${stats.homeScore} - ${stats.awayScore}`
+    : "";
 
   console.log(
-    `${roundLabel} | ${match.date} ${match.time} | ${home.name} vs ${away.name} (${match.stadium})`
+    `${roundLabel} | ${match.date} ${match.time} | ${home.name} vs ${away.name} (${match.stadium})${scoreText}`
   );
 });
 
-// 6) 2025년 K리그1 스플릿 라운드 경기만 출력
-const allMatches2025K1 = getMatchesBySeason(2025, "K1");
-
-// isSplitRound === true 인 경기만 필터
+// 6) 2025년 K리그1 스플릿 라운드 경기 목록
+const allMatches2025K1 = getScheduleBySeason(2025, "K1");
 const splitMatches2025K1 = allMatches2025K1.filter(
   (match) => match.isSplitRound
 );
@@ -96,7 +105,7 @@ console.log("\n🔀 2025년 K리그1 스플릿 라운드 경기 목록:");
 splitMatches2025K1.forEach((match) => {
   const home = teams[match.homeTeamId];
   const away = teams[match.awayTeamId];
-  const roundLabel = getRoundLabel(match); // 🔹 여기서 '스플릿 34R' 같은 텍스트 적용
+  const roundLabel = getRoundLabel(match);
 
   console.log(
     `${roundLabel} | ${match.date} ${match.time} | ${home.name} vs ${away.name} (${match.stadium})`

@@ -4,7 +4,8 @@ const { TEAM_IDS, teams } = require("../data/teams");
 const { seasons } = require("../data/seasons");
 const { PLAYER_IDS, players, formatPlayerCode } = require("../data/players");
 const { squads } = require("../data/squads");
-const { matches } = require("../data/matches");
+const { schedule } = require("../data/schedule");    // ✅ 일정용
+const { matchStats } = require("../data/matchStats"); // ✅ 경기 결과/스탯용
 
 // 시즌별 팀 목록 조회
 function getTeamsBySeason(year, division) {
@@ -56,20 +57,33 @@ function getPlayersByTeamInSeason(year, division, teamId) {
   return playerIds.map((pid) => players[pid]);
 }
 // 시즌 + 디비전 기준 전체 일정 조회
-function getMatchesBySeason(year, division) {
-  const seasonMatches = matches[year];
-  if (!seasonMatches) {
-    console.log(`해당 연도(${year})의 경기 일정 데이터가 없습니다.`);
+function getScheduleBySeason(year, division) {
+  const seasonSchedule = schedule[year];
+  if (!seasonSchedule) {
+    console.log(`해당 연도(${year})의 일정 데이터가 없습니다.`);
     return [];
   }
 
-  const list = seasonMatches[division];
+  const list = seasonSchedule[division];
   if (!list) {
-    console.log(`해당 디비전(${division})의 경기 일정 데이터가 없습니다.`);
+    console.log(`해당 디비전(${division})의 일정 데이터가 없습니다.`);
     return [];
   }
 
   return list;
+}
+
+function getScheduleByRound(year, division, round) {
+  return getScheduleBySeason(year, division).filter(
+    (match) => match.round === round
+  );
+}
+
+function getScheduleByTeamInSeason(year, division, teamId) {
+  return getScheduleBySeason(year, division).filter(
+    (match) =>
+      match.homeTeamId === teamId || match.awayTeamId === teamId
+  );
 }
 
 // 특정 라운드 일정만 필터링
@@ -95,6 +109,10 @@ function getRoundLabel(match) {
   return `${match.round}R`;
 }
 
+function getMatchStatsById(matchId) {
+  return matchStats[matchId] || null;
+}
+
 
 module.exports = {
   TEAM_IDS,
@@ -107,8 +125,9 @@ module.exports = {
   getTeamsBySeason,
   getTeamByTriCode,
   getPlayersByTeamInSeason,
-  getMatchesBySeason,
-  getMatchesByRound,
-  getMatchesByTeamInSeason,
+  getScheduleBySeason,
+  getScheduleByRound,
+  getScheduleByTeamInSeason,
+  getMatchStatsById,
   getRoundLabel
 };
