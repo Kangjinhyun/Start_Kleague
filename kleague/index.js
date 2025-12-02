@@ -14,6 +14,8 @@ const {
   getRoundLabel
 } = require("./services/kleagueService");
 
+const { getAllTeamsFromDB } = require("./services/dbTeamsService");
+
 // 1) 2025년 K리그1 팀 목록 출력
 const teams2025K1 = getTeamsBySeason(2025, "K1");
 
