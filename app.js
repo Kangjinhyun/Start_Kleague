@@ -1,28 +1,31 @@
-const express = require("express");
-require("dotenv").config();
-
+// app.js
+const express = require('express');
 const app = express();
-const PORT = process.env.PORT || 3000;
-
-// Body parser
-app.use(express.json());
+require('dotenv').config();
 
 // 라우터 불러오기
-const teamsRouter = require("./routes/teams");
-const playersRouter = require("./routes/players");
-const scheduleRouter = require("./routes/schedule");
+const teamsRouter = require('./routes/teams');
+const playersRouter = require('./routes/players');
+const scheduleRouter = require('./routes/schedule');
 
-// 라우터 등록
-app.use("/api/teams", teamsRouter);
-app.use("/api/players", playersRouter);
-app.use("/api/schedule", scheduleRouter);
+// JSON Body 파싱
+app.use(express.json());
 
-// 기본 라우트
-app.get("/", (req, res) => {
-  res.send("K League API Server is Running!");
+// 기본 헬스체크 엔드포인트
+app.get('/', (req, res) => {
+  res.json({
+    success: true,
+    message: 'Start_Kleague API server is running 🚀',
+  });
 });
 
+// 라우터 연결
+app.use('/teams', teamsRouter);
+app.use('/players', playersRouter);
+app.use('/schedule', scheduleRouter);
+
 // 서버 실행
+const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => {
-  console.log(`🚀 Server is running at http://localhost:${PORT}`);
+  console.log(`✅ Server running on port ${PORT}`);
 });

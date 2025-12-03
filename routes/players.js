@@ -1,18 +1,13 @@
-const express = require("express");
+// routes/players.js
+const express = require('express');
 const router = express.Router();
-const { getPlayersByTeamInSeasonFromDB } = require("../services/dbPlayersService");
+const playersController = require('../controllers/playersController');
 
-router.get("/:teamId", async (req, res) => {
-  const { teamId } = req.params;
-  const { season = 2025, league = "K1" } = req.query;
+// 헬스 체크
+router.get('/health', playersController.healthCheck);
 
-  try {
-    const players = await getPlayersByTeamInSeasonFromDB(season, league, teamId);
-    res.json(players);
-  } catch (err) {
-    console.error(err);
-    res.status(500).json({ error: "Server error" });
-  }
-});
+// 🔥 선수 상세
+// GET /players/:playerId
+router.get('/:playerId', playersController.getPlayerById);
 
 module.exports = router;

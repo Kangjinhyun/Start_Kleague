@@ -1,127 +1,123 @@
 // services/kleagueService.js
+const { pool } = require('../db');
 
-const { TEAM_IDS, teams } = require("../data/teams");
-const { seasons } = require("../data/seasons");
-const { schedule } = require("../data/schedule");    // ✅ 일정용
-const { matchStats } = require("../data/matchStats"); // ✅ 경기 결과/스탯용
+// 팀 목록 가져오기
+async function getTeams() {
+  const query = `
+    SELECT
+      id,
+      tri_code,
+      name,
+      city,
+      stadium,
+      founded_year,
+      stadium_capacity
+    FROM teams
+    ORDER BY id;
+  `;
 
-// DB 기반 선수 조회 서비스
-const { getPlayersByTeamInSeasonFromDB } = require("./dbPlayersService");
-
-// 시즌별 팀 목록 조회
-function getTeamsBySeason(year, division) {
-  const season = seasons[year];
-
-  if (!season) {
-    console.log(`해당 연도(${year}) 시즌 데이터가 없습니다.`);
-    return [];
-  }
-
-  const teamIds = season[division];
-
-  if (!teamIds) {
-    console.log(`해당 디비전(${division}) 데이터가 없습니다.`);
-    return [];
-  }
-
-  return teamIds.map((id) => teams[id]);
+  const { rows } = await pool.query(query);
+  return rows;
 }
 
-// triCode로 팀 찾기
-function getTeamByTriCode(triCode) {
-  const upper = triCode.toUpperCase();
-  const allTeams = Object.values(teams);
-  const found = allTeams.find((team) => team.triCode === upper);
-  return found || null;
+// tri_code로 팀 하나 가져오기
+async function getTeamByTriCode(triCode) {
+  const query = `
+    SELECT
+      id,
+      tri_code,
+      name,
+      city,
+      stadium,
+      founded_year,
+      stadium_capacity
+    FROM teams
+    WHERE UPPER(tri_code) = UPPER($1)
+    LIMIT 1;
+  `;
+
+  const { rows } = await pool.query(query, [triCode]);
+  return rows[0] || null;
 }
 
-// 시즌 + 팀 기준 선수 목록 조회 (DB 기반)
-async function getPlayersByTeamInSeason(year, division, teamId) {
-  // year = season, division = league 라고 매핑해서 그대로 넘김
-  const playersFromDB = await getPlayersByTeamInSeasonFromDB(
-    year,
-    division,
-    teamId
-  );
-  return playersFromDB;
+// team_id + season 으로 선수 목록 가져오기 (예전 방식)
+async function getPlayersByTeamInSeasonFromDB(teamId, season) {
+  const query = `
+    SELECT
+      id,
+      team_id,
+      season,
+      league,
+      name,
+      position,
+      birth_date,
+      squad_number,
+      height_text,
+      weight_text
+    FROM players
+    WHERE team_id = $1
+      AND season = $2
+    ORDER BY squad_number;
+  `;
+  const values = [teamId, season];
+  const { rows } = await pool.query(query, values);
+  return rows;
 }
 
-// 시즌 + 디비전 기준 전체 일정 조회
-function getScheduleBySeason(year, division) {
-  const seasonSchedule = schedule[year];
-  if (!seasonSchedule) {
-    console.log(`해당 연도(${year})의 일정 데이터가 없습니다.`);
-    return [];
-  }
+// tri_code + season 으로 선수 목록 가져오기 (지금 사용하는 방식)
+async function getPlayersByTeamAndSeasonByTriCode(triCode, season) {
+  const query = `
+    SELECT
+      p.id,
+      p.team_id,
+      p.season,
+      p.league,
+      p.name,
+      p.position,
+      p.birth_date,
+      p.squad_number,
+      p.height_text,
+      p.weight_text
+    FROM players p
+    JOIN teams t
+      ON p.team_id = t.id
+    WHERE UPPER(t.tri_code) = UPPER($1)
+      AND p.season = $2
+    ORDER BY p.squad_number;
+  `;
 
-  const list = seasonSchedule[division];
-  if (!list) {
-    console.log(`해당 디비전(${division})의 일정 데이터가 없습니다.`);
-    return [];
-  }
-
-  return list;
+  const values = [triCode, season];
+  const { rows } = await pool.query(query, values);
+  return rows;
 }
 
-function getScheduleByRound(year, division, round) {
-  return getScheduleBySeason(year, division).filter(
-    (match) => match.round === round
-  );
-}
+// 🔥 playerId로 선수 한 명 가져오기 (2번에서 쓸 것)
+async function getPlayerById(playerId) {
+  const query = `
+    SELECT
+      id,
+      team_id,
+      season,
+      league,
+      name,
+      position,
+      birth_date,
+      squad_number,
+      height_text,
+      weight_text
+    FROM players
+    WHERE id = $1
+    LIMIT 1;
+  `;
 
-function getScheduleByTeamInSeason(year, division, teamId) {
-  return getScheduleBySeason(year, division).filter(
-    (match) =>
-      match.homeTeamId === teamId || match.awayTeamId === teamId
-  );
-}
-
-// 👉 과거에 getMatchesBySeason을 쓰던 함수들이 있어서
-//    안전하게 alias 하나 만들어 둠
-function getMatchesBySeason(year, division) {
-  return getScheduleBySeason(year, division);
-}
-
-// 특정 라운드 일정만 필터링
-function getMatchesByRound(year, division, round) {
-  return getMatchesBySeason(year, division).filter(
-    (match) => match.round === round
-  );
-}
-
-// 특정 팀의 시즌 전체 일정
-function getMatchesByTeamInSeason(year, division, teamId) {
-  return getMatchesBySeason(year, division).filter(
-    (match) =>
-      match.homeTeamId === teamId || match.awayTeamId === teamId
-  );
-}
-
-function getRoundLabel(match) {
-  if (match.isSplitRound) {
-    // 🔹 스플릿 라운드는 '스플릿' 텍스트 추가
-    return `스플릿 ${match.round}R`;
-  }
-  return `${match.round}R`;
-}
-
-function getMatchStatsById(matchId) {
-  return matchStats[matchId] || null;
+  const { rows } = await pool.query(query, [playerId]);
+  return rows[0] || null;
 }
 
 module.exports = {
-  TEAM_IDS,
-  teams,
-  seasons,
-  getTeamsBySeason,
+  getTeams,
   getTeamByTriCode,
-  getPlayersByTeamInSeason,     // 🔥 이제 DB 기반
-  getScheduleBySeason,
-  getScheduleByRound,
-  getScheduleByTeamInSeason,
-  getMatchesBySeason,
-  getMatchesByRound,
-  getMatchesByTeamInSeason,
-  getMatchStatsById,
-  getRoundLabel
+  getPlayersByTeamInSeasonFromDB,
+  getPlayersByTeamAndSeasonByTriCode,
+  getPlayerById,
 };

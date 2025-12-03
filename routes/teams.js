@@ -1,15 +1,16 @@
-const express = require("express");
+// routes/teams.js
+const express = require('express');
 const router = express.Router();
-const { getAllTeamsFromDB } = require("../services/dbTeamsService");
+const teamsController = require('../controllers/teamsController');
 
-router.get("/", async (req, res) => {
-  try {
-    const teams = await getAllTeamsFromDB();
-    res.json(teams);
-  } catch (err) {
-    console.error(err);
-    res.status(500).json({ error: "Server error" });
-  }
-});
+// GET /teams
+router.get('/', teamsController.getTeams);
+
+// ⚠️ 더 구체적인 경로를 위에 두기
+// GET /teams/:triCode/players
+router.get('/:triCode/players', teamsController.getPlayersByTeam);
+
+// GET /teams/:triCode  (팀 상세)
+router.get('/:triCode', teamsController.getTeamDetail);
 
 module.exports = router;
