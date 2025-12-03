@@ -1,23 +1,14 @@
 // db.js
-require("dotenv").config();
-const { Pool } = require("pg");
+const { Pool } = require('pg');
+require('dotenv').config();
 
-// 환경변수에서 DB URL 읽기
-const connectionString = process.env.DATABASE_URL;
-
-if (!connectionString) {
-  throw new Error("DATABASE_URL이 설정되어 있지 않습니다. .env 파일을 확인하세요.");
-}
-
-// Supabase 같은 클라우드 PostgreSQL은 SSL을 요구하는 경우가 많음
+// Supabase / PostgreSQL 공용 설정
 const pool = new Pool({
-  connectionString,
+  connectionString: process.env.DATABASE_URL,
   ssl: {
-    rejectUnauthorized: false
-  }
+    require: true,             // SSL 반드시 사용
+    rejectUnauthorized: false, // Supabase에서 보통 이렇게 둠
+  },
 });
 
-module.exports = {
-  pool
-};
-
+module.exports = { pool };
