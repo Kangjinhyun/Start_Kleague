@@ -7,6 +7,7 @@ require('dotenv').config();
 const teamsRouter = require('./routes/teams');
 const playersRouter = require('./routes/players');
 const scheduleRouter = require('./routes/schedule');
+const matchesRouter = require('./routes/matches');
 
 // JSON Body 파싱
 app.use(express.json());
@@ -23,6 +24,7 @@ app.get('/', (req, res) => {
 app.use('/teams', teamsRouter);
 app.use('/players', playersRouter);
 app.use('/schedule', scheduleRouter);
+app.use('/matches', matchesRouter);
 
 // 서버 실행
 const PORT = process.env.PORT || 3000;
