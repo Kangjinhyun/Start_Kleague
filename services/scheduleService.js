@@ -9,6 +9,7 @@ async function getScheduleBySeason(season) {
       s.season,
       s.league,
       s.round,
+      s.match_number,
       s.match_datetime,
       s.stadium,
       s.status,
@@ -37,6 +38,7 @@ async function getScheduleBySeasonAndTeamTriCode(season, triCode) {
       s.season,
       s.league,
       s.round,
+      s.match_number,
       s.match_datetime,
       s.stadium,
       s.status,
@@ -62,6 +64,37 @@ async function getScheduleBySeasonAndTeamTriCode(season, triCode) {
   return rows;
 }
 
+// 시즌 + 라운드 기준 일정 조회 (라운드별 경기 목록)
+async function getScheduleBySeasonAndRound(season, round) {
+  const query = `
+    SELECT
+      s.id,
+      s.season,
+      s.league,
+      s.round,
+      s.match_number,
+      s.match_datetime,
+      s.stadium,
+      s.status,
+      s.home_team_id,
+      th.tri_code AS home_tri_code,
+      th.name     AS home_team_name,
+      s.away_team_id,
+      ta.tri_code AS away_tri_code,
+      ta.name     AS away_team_name
+    FROM schedule s
+    JOIN teams th ON s.home_team_id = th.id
+    JOIN teams ta ON s.away_team_id = ta.id
+    WHERE s.season = $1
+      AND s.round  = $2
+    ORDER BY s.match_datetime, s.match_number;
+  `;
+
+  const values = [season, round];
+  const { rows } = await pool.query(query, values);
+  return rows;
+}
+
 // 개별 경기 일정 한 건 조회
 async function getScheduleById(id) {
   const query = `
@@ -70,6 +103,7 @@ async function getScheduleById(id) {
       s.season,
       s.league,
       s.round,
+      s.match_number,
       s.match_datetime,
       s.stadium,
       s.status,
@@ -93,5 +127,6 @@ async function getScheduleById(id) {
 module.exports = {
   getScheduleBySeason,
   getScheduleBySeasonAndTeamTriCode,
+  getScheduleBySeasonAndRound,
   getScheduleById,
 };

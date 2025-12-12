@@ -3,11 +3,20 @@ const express = require('express');
 const router = express.Router();
 const scheduleController = require('../controllers/scheduleController');
 
-// 순서 중요: 먼저 리스트, 그 다음 상세
-// GET /schedule
-router.get('/', scheduleController.getSchedule);
+// 1) 라운드별 경기 목록
+// GET /schedule/round/:round?season=2025
+router.get('/round/:round', scheduleController.getScheduleByRound);
 
-// GET /schedule/:id
-router.get('/:id', scheduleController.getScheduleById);
+// 2) 시즌 + 팀 tri_code 기준 일정
+// GET /schedule/:season/team/:triCode
+router.get('/:season/team/:triCode', scheduleController.getScheduleBySeasonAndTeam);
+
+// 3) 개별 경기 일정 조회
+// GET /schedule/match/:scheduleId
+router.get('/match/:scheduleId', scheduleController.getScheduleById);
+
+// 4) 시즌 전체 일정
+// GET /schedule/:season
+router.get('/:season', scheduleController.getScheduleBySeason);
 
 module.exports = router;

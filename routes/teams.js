@@ -3,14 +3,13 @@ const express = require('express');
 const router = express.Router();
 const teamsController = require('../controllers/teamsController');
 
-// GET /teams
+// 팀 목록
 router.get('/', teamsController.getTeams);
 
-// ⚠️ 더 구체적인 경로를 위에 두기
-// GET /teams/:triCode/players
-router.get('/:triCode/players', teamsController.getPlayersByTeam);
+// 팀별 시즌 경기 일정
+router.get('/:triCode/matches', teamsController.getTeamMatches);
 
-// GET /teams/:triCode  (팀 상세)
-router.get('/:triCode', teamsController.getTeamDetail);
+// 팀별 선수 목록
+router.get('/:teamId/players', teamsController.getTeamPlayers);
 
 module.exports = router;

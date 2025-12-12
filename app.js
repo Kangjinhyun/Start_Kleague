@@ -6,7 +6,7 @@ require('dotenv').config();
 // 라우터 불러오기
 const teamsRouter = require('./routes/teams');
 const playersRouter = require('./routes/players');
-const scheduleRouter = require('./routes/schedule');
+const scheduleRoutes = require('./routes/schedule'); // ✅ 여기 수정
 const matchesRouter = require('./routes/matches');
 
 // JSON Body 파싱
@@ -23,7 +23,7 @@ app.get('/', (req, res) => {
 // 라우터 연결
 app.use('/teams', teamsRouter);
 app.use('/players', playersRouter);
-app.use('/schedule', scheduleRouter);
+app.use('/schedule', scheduleRoutes);
 app.use('/matches', matchesRouter);
 
 // 서버 실행
